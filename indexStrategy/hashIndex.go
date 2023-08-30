@@ -136,5 +136,5 @@ func (h *HashIndex) Find(key searchKey) (Tuple, error) {
 			return tuple, nil
 		}
 	}
-	return Tuple{}, errors.New(fmt.Sprintf("Page address found: %v. But value not found in page!", pageAddr))
+	return Tuple{}, fmt.Errorf("Page address found: %v. But value not found in page", pageAddr)
 }
