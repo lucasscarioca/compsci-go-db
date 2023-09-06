@@ -75,12 +75,10 @@ func (h *HashIndex) pushKey(bucketAddr int, key searchKey, pageAddr int) {
 	h.Buckets[bucketAddr].Map = append(h.Buckets[bucketAddr].Map, bucketMap{key, pageAddr})
 }
 
-// Mapeia uma chave de busca em um endereço de bucket
-// Calcula o endereço do bucket (indice do bucket) a partir da chave de busca
 // Recebe a palavra e indica o bucket a ser guardado
 func Hash(key searchKey, nb int) int {
 	var res int
-	// Sum ASCII chars
+	// (k^0 * (first char)) + (k^1 * (second char)) + (k^2 * (third char)) + ...
 	for i := 0; i < len(key); i++ {
 		res += int(key[i]) * int(math.Pow(31, float64(i)))
 	}
