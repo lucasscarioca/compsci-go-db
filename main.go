@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	file, err := os.Open("./data/words_test.txt")
+	file, err := os.Open("./data/words.txt")
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return
@@ -30,5 +30,14 @@ func main() {
 		return
 	}
 
-	db.NewHashIndex(50, lines)
+	hashIndex := db.NewHashIndex(200, lines)
+
+	var input string
+	fmt.Print("Enter key: ")
+	fmt.Scanln(&input)
+	tuple, err := hashIndex.Find(input)
+	if err != nil {
+		fmt.Println("find key error:", err)
+	}
+	fmt.Println(tuple)
 }

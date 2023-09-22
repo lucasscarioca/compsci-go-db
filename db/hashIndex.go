@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math"
 )
 
@@ -17,6 +18,17 @@ type tuple struct {
 // Todas as tuplas.
 type table struct {
 	Pages []page
+}
+
+func (t *table) pushTuple(tuple tuple, pageSize int) (int, error) {
+	for pageIndex, page := range t.Pages {
+		if len(page.Tuples) >= pageSize {
+			continue
+		}
+		page.Tuples = append(page.Tuples, tuple)
+		return pageIndex, nil
+	}
+	return 0, errors.New("failed to push tuple in table. Tuple:" + tuple.Key)
 }
 
 // Alocação física da tabela.
@@ -39,19 +51,22 @@ type bucketMap struct {
 func (b *bucket) handleOverflow(h *HashIndex, payload bucketMap) {
 	if len(b.Map) >= BUCKET_SIZE {
 		h.OverflowCount++
+		if b.OverflowBucket == nil {
+			b.OverflowBucket = &bucket{}
+		}
 		b.OverflowBucket.handleOverflow(h, payload)
 	}
 	b.Map = append(b.Map, payload)
 }
 
-func (b *bucket) Find(key searchKey) (int, error) {
+func (b *bucket) FindPageAddr(key searchKey) (int, error) {
 	for _, bMap := range b.Map {
 		if bMap.Value == key {
 			return bMap.PageAddr, nil
 		}
 	}
-	if len(b.OverflowBucket.Map) > 0 {
-		return b.OverflowBucket.Find(key)
+	if b.OverflowBucket != nil && len(b.OverflowBucket.Map) > 0 {
+		return b.OverflowBucket.FindPageAddr(key)
 	}
 	return 0, errors.New("key not found")
 }
@@ -83,10 +98,10 @@ func Hash(key searchKey, nb int) int {
 		res += int(key[i]) * int(math.Pow(31, float64(i)))
 	}
 
-	return int(math.Mod(float64(res), float64(nb)))
+	return int(math.Abs((math.Mod(float64(res), float64(nb)))))
 }
 
-const BUCKET_SIZE = 5
+const BUCKET_SIZE = 200
 
 var Hashtable table
 
@@ -106,28 +121,47 @@ func NewHashIndex(pageSize int, dataArr []string) HashIndex {
 		Pages: make([]page, pagesQtty),
 	}
 
-	// Create Tuples
-	for pageIndex, page := range Hashtable.Pages {
-		page.Tuples = make([]tuple, pageSize)
-		// Add tuple data
-		for tupleIndex, tuple := range page.Tuples {
-			fmt.Println(pageIndex+tupleIndex, dataArr[pageIndex+tupleIndex])
-			tuple.Key = dataArr[pageIndex+tupleIndex]
-			tuple.Data = tuple.Key
-
-			// Generate Hash
-			fmt.Println(Hash(tuple.Key, nb))
-			bucketAddr := int(math.Abs(float64(Hash(tuple.Key, nb))))
-			// Update Bucket with searchKey and pageAddress
-			hashIndex.pushKey(bucketAddr, tuple.Key, pageIndex)
+	for _, value := range dataArr {
+		// Create tuple
+		newTuple := tuple{value, value}
+		// Generate Hash
+		bucketAddr := Hash(newTuple.Key, nb)
+		// Find available page and push tuple
+		pageAddr, err := Hashtable.pushTuple(newTuple, pageSize)
+		if err != nil {
+			log.Fatal(err)
 		}
+		// Update Bucket with searchKey and pageAddress
+		hashIndex.pushKey(bucketAddr, newTuple.Key, pageAddr)
+		// Hashtable.Pages[pageAddr].Tuples[valueIndex] = newTuple
 	}
-	return HashIndex{}
+
+	// Create Tuples
+	// for pageIndex, page := range Hashtable.Pages {
+	// 	page.Tuples = make([]tuple, tuplesPerPage)
+	// 	Hashtable.Pages[pageIndex] = page
+	// 	// Add tuple data
+	// 	// fmt.Println(len(Hashtable.Pages), tuplesPerPage)
+	// 	for tupleIndex, tuple := range page.Tuples {
+	// 		tuple.Key = dataArr[tupleIndex]
+	// 		tuple.Data = tuple.Key
+
+	// 		// Generate Hash
+	// 		bucketAddr := Hash(tuple.Key, nb)
+	// 		if tuple.Key == "scrambler" {
+	// 			fmt.Println(bucketAddr)
+	// 		}
+	// 		// Update Bucket with searchKey and pageAddress
+	// 		hashIndex.pushKey(bucketAddr, tuple.Key, pageIndex)
+	// 		Hashtable.Pages[pageIndex].Tuples[tupleIndex] = tuple
+	// 	}
+	// }
+	return hashIndex
 }
 
 func (h *HashIndex) Find(key searchKey) (tuple, error) {
 	bucketAddr := Hash(key, h.NB)
-	pageAddr, err := h.Buckets[bucketAddr].Find(key)
+	pageAddr, err := h.Buckets[bucketAddr].FindPageAddr(key)
 	if err != nil {
 		fmt.Println(err.Error())
 		return tuple{}, err
