@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .btn {
+    @apply bg-accent hover:bg-accent-bold text-primary font-semibold py-2 px-4 rounded;
+  }
+  .cancel-btn {
+    @apply bg-cancel hover:bg-cancel-bold text-primary font-semibold py-2 px-4 rounded;
+  }
+}

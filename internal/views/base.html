@@ -1,0 +1,21 @@
+{{ define "base.html" }}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>{{ template "title" . }}</title>
+
+    {{ if .app.Meta.Description }}
+    <meta name="description" content="{{ .app.Meta.Description }}" />
+    {{ end }}
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script src="js/htmx1.9.4.js"></script>
+  </head>
+  <body
+    class="bg-primary dark:bg-primary-dark text-primary-dark dark:text-primary font-primary"
+  >
+    {{ template "body" . }}
+  </body>
+</html>
+{{ end }}

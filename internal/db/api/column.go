@@ -1,4 +1,4 @@
-package main
+package model
 
 const (
 	ColumnInt = 1 << iota

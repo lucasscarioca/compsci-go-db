@@ -1,0 +1,8 @@
+.vscode/
+node_modules/
+tmp/
+vendor/
+bin/
+
+.env
+assets/static/css/styles.css

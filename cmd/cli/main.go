@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/lucasscarioca/custom-db/db"
+	"github.com/lucasscarioca/custom-db/internal/db/core"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 		return
 	}
 
-	hashIndex := db.NewHashIndex(200, lines)
+	hashIndex := core.NewHashIndex(200, lines)
 
 	var input string
 	fmt.Print("Enter key: ")

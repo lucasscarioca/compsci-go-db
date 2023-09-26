@@ -1,4 +1,4 @@
-package main
+package model
 
 type Database struct {
 	tables  map[string]Table
