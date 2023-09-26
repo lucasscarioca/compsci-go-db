@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/lucasscarioca/custom-db/internal/controllers"
 	"github.com/lucasscarioca/custom-db/internal/http/middlewares"
 	"github.com/lucasscarioca/custom-db/internal/views"
 )
@@ -19,6 +20,11 @@ func Mount(e *echo.Echo) {
 	pages := e.Group("/", middlewares.CacheControl(0))
 	pages.GET("", controllers.Home)
 	pages.GET("404", pageNotFoundHandler)
+
+	// Htmx Fragments Routes
+	hx := e.Group("/hx", middlewares.CacheControl(0), middlewares.ValidateHxRequest)
+	hx.POST("/search", controllers.Search)
+	hx.POST("/tablescan", controllers.TableScan)
 }
 
 func customHTTPErrorHandler(err error, c echo.Context) {

@@ -1,48 +1,43 @@
 package main
 
 import (
-	"bufio"
+	"context"
 	"fmt"
+	"net/http"
 	"os"
+	"os/signal"
+	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/lucasscarioca/custom-db/internal/db/core"
+	"github.com/lucasscarioca/custom-db/internal/db"
 	"github.com/lucasscarioca/custom-db/internal/http/middlewares"
+	"github.com/lucasscarioca/custom-db/internal/http/routes"
 )
 
 func main() {
-	file, err := os.Open("./data/words.txt")
+	err := db.Init()
 	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
+		panic("Failed to instantiate database")
 	}
-	defer file.Close()
 
 	e := echo.New()
+
 	middlewares.Mount(e)
+	routes.Mount(e)
 
-	scanner := bufio.NewScanner(file)
-
-	var lines []string
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		lines = append(lines, line)
+	fmt.Println("🚀 Starting server on port: http://localhost:3000")
+	go func() {
+		if err := e.Start(":3000"); err != nil && err != http.ErrServerClosed {
+			e.Logger.Fatal("shutting down the server")
+		}
+	}()
+	// Wait for interrupt signal to gracefully shutdown the server
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
 	}
-
-	if err := scanner.Err(); err != nil {
-		fmt.Println("Error reading file:", err)
-		return
-	}
-
-	hashIndex := core.NewHashIndex(200, lines)
-
-	var input string
-	fmt.Print("Enter key: ")
-	fmt.Scanln(&input)
-	tuple, err := hashIndex.Find(input)
-	if err != nil {
-		fmt.Println("find key error:", err)
-	}
-	fmt.Println(tuple)
 }

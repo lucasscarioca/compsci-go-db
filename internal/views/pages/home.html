@@ -1,3 +1,54 @@
 {{ define "title" }} Home {{ end }} {{ define "body" }}
-<div>Home</div>
+
+<h1 class="text-center font-bold text-2xl mb-8">Índice Hash</h1>
+<table class="w-full border-collapse bg-white">
+  <tr>
+    <th>Número de tuplas</th>
+    <th>Tuplas por Bucket</th>
+    <th>Número de Buckets</th>
+    <th>Número de páginas</th>
+    <th>Quantitade de Overflows</th>
+    <th>Percentagem de Overflows</th>
+    <th>Quantitade de Colisões</th>
+    <th>Percentagem de Colisões</th>
+  </tr>
+  <tr>
+    <td>{{ .Stats.NR }}</td>
+    <td>{{ .Stats.FR }}</td>
+    <td>{{ .Stats.NB }}</td>
+    <td>{{ .Stats.PagesQtty }}</td>
+    <td>{{ .Stats.OverflowCount }}</td>
+    <td>{{ .Stats.OverflowPct }}%</td>
+    <td>{{ .Stats.CollisionCount }}</td>
+    <td>{{ .Stats.CollisionPct }}%</td>
+  </tr>
+</table>
+
+<h2 class="mt-8 text-center font-bold text-xl">Buscar</h2>
+<div class="pt-4 flex flex-col items-center justify-center">
+  <input
+    placeholder="Insira uma chave..."
+    class="mb-4"
+    autofocus
+    type="text"
+    name="search"
+    hx-post="/hx/search"
+    hx-target="#searchResults"
+  />
+  <div id="searchResults"></div>
+</div>
+
+<h2 class="mt-8 text-center font-bold text-xl">Table Scan</h2>
+<div class="pt-4 flex flex-col items-center justify-center">
+  <input
+    placeholder="Quantidade de registros..."
+    class="mb-4"
+    type="number"
+    name="nRegisters"
+    hx-post="/hx/tablescan"
+    hx-target="#tableScanResults"
+  />
+  <ul id="tableScanResults" class="max-h-80 w-52 overflow-x-auto p-2"></ul>
+</div>
+
 {{ end }}

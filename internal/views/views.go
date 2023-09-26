@@ -9,6 +9,7 @@ import (
 )
 
 var templatesMap = map[string][]string{
+	// Pages
 	"home": {
 		"internal/views/base.html",
 		"internal/views/pages/home.html",
@@ -16,6 +17,16 @@ var templatesMap = map[string][]string{
 	"pageNotFound": {
 		"internal/views/base.html",
 		"internal/views/pages/404.html",
+	},
+	// Partials
+	"search_response": {
+		"internal/views/partials/search_response.html",
+	},
+	"scan_response": {
+		"internal/views/partials/scan_response.html",
+	},
+	"not_found": {
+		"internal/views/partials/not_found.html",
 	},
 }
 

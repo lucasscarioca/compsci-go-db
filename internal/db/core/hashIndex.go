@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"log"
 	"math"
+
+	"github.com/lucasscarioca/custom-db/internal/db/models"
 )
 
 const BUCKET_SIZE = 800
 
-var Hashtable table
+var Hashtable Table
 
 // Recebe a palavra e indica o bucket a ser guardado
 func Hash(key searchKey, nb int) int {
@@ -25,6 +27,7 @@ type HashIndex struct {
 	NR             int      // Número de tuplas
 	FR             int      // Número de tuplas por bucket
 	NB             int      // NR/FR
+	PagesQtty      int      // Número de páginas
 	Buckets        []bucket // length = NB
 	OverflowCount  int
 	CollisionCount int
@@ -32,19 +35,20 @@ type HashIndex struct {
 
 func NewHashIndex(pageSize int, dataArr []string) HashIndex {
 	nb := int(math.Ceil(float64(len(dataArr)) / float64(BUCKET_SIZE)))
+	pagesQtty := int(math.Ceil(float64(len(dataArr)) / float64(pageSize)))
 	// Create Hash Index Struct
 	hashIndex := HashIndex{
-		NR:      len(dataArr),
-		FR:      BUCKET_SIZE,
-		NB:      nb,
-		Buckets: make([]bucket, nb),
+		NR:        len(dataArr),
+		FR:        BUCKET_SIZE,
+		NB:        nb,
+		PagesQtty: pagesQtty,
+		Buckets:   make([]bucket, nb),
 	}
 
 	// Create Table and Pages
-	pagesQtty := int(math.Ceil(float64(len(dataArr)) / float64(pageSize)))
 	// fmt.Println("pagesQtty", pagesQtty)
 	// fmt.Println("nb", nb)
-	Hashtable = table{
+	Hashtable = Table{
 		Pages: make([]page, pagesQtty),
 	}
 
@@ -64,17 +68,17 @@ func NewHashIndex(pageSize int, dataArr []string) HashIndex {
 	}
 
 	fmt.Println("Hashtable populated and HashIndex created!")
-	fmt.Printf(
-		"\nNR: %v\nFR: %v\nNB: %v\nNumber of pages: %v\n\nOverflow count: %v\nOverflow percentage: %.2f%%\nCollision count: %v\nCollision percentage: %.2f%%\n\n",
-		hashIndex.NR,
-		hashIndex.FR,
-		hashIndex.NB,
-		pagesQtty,
-		hashIndex.OverflowCount,
-		(float64(hashIndex.OverflowCount)/float64(BUCKET_SIZE))*100,
-		hashIndex.CollisionCount,
-		(float64(hashIndex.CollisionCount)/float64(len(dataArr)))*100,
-	)
+	// fmt.Printf(
+	// 	"\nNR: %v\nFR: %v\nNB: %v\nNumber of pages: %v\n\nOverflow count: %v\nOverflow percentage: %.2f%%\nCollision count: %v\nCollision percentage: %.2f%%\n\n",
+	// 	hashIndex.NR,
+	// 	hashIndex.FR,
+	// 	hashIndex.NB,
+	// 	pagesQtty,
+	// 	hashIndex.OverflowCount,
+	// 	(float64(hashIndex.OverflowCount)/float64(BUCKET_SIZE))*100,
+	// 	hashIndex.CollisionCount,
+	// 	(float64(hashIndex.CollisionCount)/float64(len(dataArr)))*100,
+	// )
 	return hashIndex
 }
 
@@ -91,20 +95,22 @@ func (h *HashIndex) pushKey(bucketAddr int, key searchKey, pageAddr int) {
 	h.Buckets[bucketAddr].Map = append(h.Buckets[bucketAddr].Map, bucketMap{key, pageAddr})
 }
 
-func (h *HashIndex) Find(key searchKey) (tuple, error) {
+func (h *HashIndex) Find(key searchKey) (models.HashIndexFindResponse, error) {
 	bucketAddr := Hash(key, h.NB)
 	pageAddr, err := h.Buckets[bucketAddr].findPageAddr(key)
-	// fmt.Printf("\nBucketAddr: %v\nPageAddr: %v\n", bucketAddr, pageAddr)
+
 	if err != nil {
 		fmt.Println(err.Error())
-		return tuple{}, err
+		return models.HashIndexFindResponse{}, err
 	}
 	for tupleIndex, tuple := range Hashtable.Pages[pageAddr].Tuples {
 		if tuple.Key == key {
-			fmt.Println("Value found on Page: ", pageAddr)
-			fmt.Println("On Page position: ", tupleIndex)
-			return tuple, nil
+			return models.HashIndexFindResponse{
+				PageAddr:     pageAddr,
+				PagePosition: tupleIndex,
+				Tuple:        tuple,
+			}, nil
 		}
 	}
-	return tuple{}, fmt.Errorf("page address found: %v. But value not found in page", pageAddr)
+	return models.HashIndexFindResponse{}, fmt.Errorf("page address found: %v. But value not found in page", pageAddr)
 }
